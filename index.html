@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>huid analyse Noëlle</title>
+<style>
+    body {
+        font-family: Helvetica, sans-serif;
+        background-color: #F0A9C4;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+    }
+    .container {
+        max-width: 600px;
+        margin: auto;
+        background: #F0A9C4;
+        padding: 20px;
+        border-radius: 10px;
+    }
+    button {
+        width: 90%;
+        margin: 10px auto;
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .result-box {
+        text-align: left;
+        background: #ffffff70;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>huid analyse noëlle</h1>
+    <h3 id="question"></h3>
+    <div id="buttons"></div>
+</div>
+
+<script>
+const questions = {
+    q1: "Hoe voelt je huid meestal aan?",
+    q2: "Hoe ziet je huid eruit aan het einde van de dag?",
+    q3: "Hoe vaak heb je last van puistjes?",
+    q4: "Wordt je huid snel rood?",
+    q5: "Reageert je huid op producten?",
+    q6: "Voelt je huid vaak trekkerig?",
+    q7: "Jeuk of irritatie na skincare?",
+    q8: "Hoeveel stress ervaar je?",
+    q9: "Raak je je gezicht vaak aan?",
+    q10: "Gebruik je make-up?",
+    q11: "Hoe vaak was je je gezicht?"
+};
+
+const options = {
+    q1: ["A Droog", "B Normaal", "C Gemengd", "D Vet"],
+    q2: ["A Droog", "B Normaal", "C Gemengd", "D Vet"],
+    q3: ["A Zelden", "B Soms", "C Regelmatig", "D Vaak"],
+    q4: ["A Vaak", "B Soms", "C Af en toe", "D Nooit"],
+    q5: ["A Snel", "B Soms", "C Af en toe", "D Nooit"],
+    q6: ["A Vaak", "B Soms", "C Af en toe", "D Nooit"],
+    q7: ["A Vaak", "B Soms", "C Af en toe", "D Nooit"],
+    q8: ["A Veel", "B Gemiddeld", "C Weinig"],
+    q9: ["A Vaak", "B Soms", "C Nooit"],
+    q10: ["A Dagelijks", "B Soms", "C Nooit"],
+    q11: ["A 1× per dag", "B 2× per dag", "C 3× per dag", "D Meer dan 3×"]
+};
+
+let order = Object.keys(questions);
+let answers = {};
+let index = 0;
+
+function nextQuestion() {
+    if (index >= order.length) return showResult();
+
+    const key = order[index];
+    document.getElementById("question").innerText = questions[key];
+
+    const btns = document.getElementById("buttons");
+    btns.innerHTML = "";
+
+    options[key].forEach(opt => {
+        let code = opt.split(" ")[0];
+        let b = document.createElement("button");
+        b.innerText = opt;
+        b.onclick = () => {
+            answers[key] = code;
+            index++;
+            nextQuestion();
+        };
+        btns.appendChild(b);
+    });
+}
+
+function skinQuizAnalysis(a) {
+    let scoreDry = 0, scoreNormal = 0, scoreCombo = 0, scoreOily = 0;
+    let scoreSensitive = 0, scoreAcne = 0, scoreBarrier = 0;
+    let scoreStress = 0, scoreHabits = 0;
+
+    ["q1","q2"].forEach(q=>{
+        if(a[q]=="A") scoreDry++;
+        else if(a[q]=="B") scoreNormal++;
+        else if(a[q]=="C") scoreCombo++;
+        else if(a[q]=="D") scoreOily++;
+    });
+
+    if(a.q3=="B") scoreAcne++;
+    else if(a.q3=="C") scoreAcne+=2;
+    else if(a.q3=="D") scoreAcne+=3;
+
+    if(a.q4=="A"){scoreSensitive+=2;scoreBarrier+=2;}
+    else if(a.q4=="C"){scoreSensitive++;scoreBarrier++;}
+
+    if(a.q5=="A") scoreSensitive+=2;
+    else if(["B","C"].includes(a.q5)) scoreSensitive++;
+
+    if(a.q6=="A"){scoreSensitive+=2;scoreBarrier+=2;}
+    else if(["B","C"].includes(a.q6)) scoreSensitive++;
+
+    if(a.q7=="A"){scoreSensitive+=2;scoreBarrier+=2;}
+    else if(a.q7=="B") scoreSensitive++;
+
+    if(a.q8=="A") scoreStress+=2;
+    else if(a.q8=="B") scoreStress++;
+
+    if(a.q9=="A") scoreHabits+=2;
+    else if(a.q9=="B") scoreHabits++;
+
+    if(a.q10=="A") scoreHabits+=2;
+    else if(a.q10=="B") scoreHabits++;
+
+    if(a.q11=="A") scoreHabits++;
+    else if(a.q11=="D"){scoreHabits+=2;scoreBarrier++;}
+
+    let base = {
+        droog: scoreDry, normaal: scoreNormal,
+        gemengd: scoreCombo, vet: scoreOily
+    };
+    let primary = Object.keys(base).reduce((a,b)=>base[a]>base[b]?a:b);
+
+    function result(title,badge,summary,advice,notes){
+        return {title,badge,summary,advice,notes};
+    }
+
+    if(scoreBarrier>=4 && scoreSensitive>=5)
+        return result("Zeer gevoelige huid met verstoorde huidbarrière","Extra gevoelig",
+            "Je huid reageert snel met roodheid, trekkerig gevoel of jeuk.",
+            ["Gebruik een milde, parfumvrije cleanser.","Crème met ceramiden.","Vermijd scrubs.","Was max 2× per dag."],
+            "Bij eczeem → arts.");
+
+    if(scoreAcne>=3 && scoreStress>=2)
+        return result("Acnegevoelige huid met stressfactoren","Puistjes & stress",
+            "Stress beïnvloedt je huid en vergroot kans op puistjes.",
+            ["Milde cleanser.","Niet-comedogeen.","Salicylzuur.","Stressreductie."],
+            "Bij ontstekingen → dermatoloog.");
+
+    if(scoreHabits>=4 && scoreAcne>=2)
+        return result("Onzuivere huid door gewoontes","Huid & gewoontes",
+            "Veel aanraken of te vaak wassen veroorzaakt puistjes.",
+            ["Raak je gezicht minder aan.","Reinig elke avond.","Niet-comedogeen.","Max 2× per dag wassen."],
+            "Kleine veranderingen helpen.");
+
+    if(primary=="droog")
+        return result("Droge huid","Droog","Je huid heeft hydratatie nodig.",
+            ["Niet-schuimende cleanser.","Hyaluronzuur.","Ceramiden."],
+            "Drink genoeg water.");
+
+    if(primary=="gemengd")
+        return result("Gemengde huid","Gemengd","T-zone vet, wangen normaal.",
+            ["Lichte crème T-zone.","Rijker op wangen.","Niacinamide."],
+            "Zone-verzorging werkt goed.");
+
+    if(primary=="vet")
+        return result("Vette huid","Vet","Je huid maakt sneller talg aan.",
+            ["Gel-cleanser.","Olievrije moisturizer.","Salicylzuur."],
+            "Consistent blijven.");
+
+    return result("Normale huid","In balans","Je huid is stabiel.",
+        ["Milde routine.","SPF.","Behandel puistjes plaatselijk."],
+        "Blijf onderhouden.");
+}
+
+function showResult() {
+    const r = skinQuizAnalysis(answers);
+    document.body.innerHTML = `
+        <div class='container'>
+            <h1>${r.title}</h1>
+            <h3>${r.badge}</h3>
+            <div class='result-box'>
+                <p>${r.summary}</p>
+                <h3>Advies:</h3>
+                <ul>${r.advice.map(a=>"<li>"+a+"</li>").join("")}</ul>
+                <p><i>${r.notes}</i></p>
+            </div>
+        </div>
+    `;
+}
+
+nextQuestion();
+</script>
+
+</body>
+</html>
